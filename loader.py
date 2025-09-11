@@ -3,12 +3,12 @@ from abc import ABC, abstractmethod
 
 import PIL
 import requests
-import io
 from pdf2image import convert_from_bytes
 from PIL import Image
+import time
 
 class Loader:
-    def __init__(self, dataset_name, datasets_dir):
+    def __init__(self, dataset_name, datasets_dir, max_per_hour=0):
         self.dataset_name = dataset_name
         self.datasets_dir = datasets_dir
 
@@ -25,6 +25,10 @@ class Loader:
         self.count = 0
 
         self.max = 0
+
+        self.max_per_hour = max_per_hour # for rate limiting. Default is 0.
+
+        self.wait_interval = self.max_per_hour / (60*60)
 
         os.makedirs(self.output_folder, exist_ok=True)
 
@@ -54,13 +58,39 @@ class Loader:
 
 
     def web_pdf_to_image(self, url, output_path, dpi=200):
+
+        if self.wait_interval != 0:
+            time.sleep(self.wait_interval)
+
         if not os.path.exists(output_path):
-            response = requests.get(url)
-            response.raise_for_status()  # Raise error for bad status
 
-            # Convert PDF bytes to image(s)
-            images = convert_from_bytes(response.content, dpi=dpi)
+            headers = None
+            if self.dataset_name == "supplements":
 
-            return images[0]
+                headers = {
+                    'X-Api-Key': os.getenv("NHI_API_KEY")
+                }
+
+            if headers is not None:
+                response = requests.get(url, headers=headers)
+                response.raise_for_status()  # Raise error for bad status
+
+                # Convert PDF bytes to image(s)
+                images = convert_from_bytes(response.content, dpi=dpi)
+
+                return images[0]
+
+            elif self.dataset_name == "supplements":
+                exit("api key is required for supplements api")
+
+            else:
+                response = requests.get(url)
+                response.raise_for_status()  # Raise error for bad status
+
+                # Convert PDF bytes to image(s)
+                images = convert_from_bytes(response.content, dpi=dpi)
+
+                return images[0]
+
         else:
             return PIL.Image.open(output_path)
