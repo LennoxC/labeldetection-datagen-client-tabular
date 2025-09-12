@@ -47,9 +47,13 @@ class Loader:
         print(f"{self.dataset_name} loader starting")
 
         while self.count < self.max or self.max == 0:
-            index, image, qas = self.load_next()
-            self.write_next(index, image, qas)
-            self.count += 1
+            try:
+                index, image, qas = self.load_next()
+                self.write_next(index, image, qas)
+                self.count += 1
+            except Exception as e:
+                self.count += 1
+                print(f"Exception: + {str(e)}")
 
             if self.count % 10 == 0:
                 print(f"{self.count} images processed")
@@ -94,3 +98,6 @@ class Loader:
 
         else:
             return PIL.Image.open(output_path)
+
+    def float_to_string(self, input_num):
+        return ('%.15f' % input_num).rstrip('0').rstrip('.')

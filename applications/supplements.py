@@ -12,13 +12,13 @@ class SupplementsLoader(Loader):
 
         self.processed_max = 0
 
-        self.products_csv = os.path.join(self.tabular_dir, "products.csv")
+        self.products_csv = os.path.join(self.tabular_dir, "products_clean.csv")
         self.supplements_csv = os.path.join(self.tabular_dir, "supplementfacts.csv")
 
         self.products_df = pd.read_csv(self.products_csv)
         self.supplements_df = pd.read_csv(self.supplements_csv)
         self.dataset_columns = ["id", "label_image_url", "product_name", "brand_name", "barcode_number", "net_contents", "serving_size", "suggested_use", "other_ingredients", "company_name"]
-        self.sample_columns = ["product_name", "brand_name", "net_contents", "serving_size", "company_name"]
+        self.sample_columns = ["product_name", "company_name", "net_contents_clean", "serving_size_clean"]
 
         self.ids = self.products_df["id"].tolist()
 
@@ -73,20 +73,20 @@ class SupplementsLoader(Loader):
         return pairs
 
     def process_column(self, column_name, value):
-        #["product_name", "brand_name", "net_contents", "serving_size", "company_name"]
+        #["product_name", "brand_name", "net_contents_clean", "serving_size_clean", "company_name"]
 
         if column_name == "product_name":
-            return "prompt_product_name", "product", value # What is the name of the product?
+            return "prompt_product_name", "product", value.lower() # What is the name of the product?
         if column_name == "brand_name":
-            return "prompt_brand_name", "brand", value # What is the name of the brand?
-        if column_name == "net_contents":
+            return "prompt_brand_name", "brand", value.lower() # What is the name of the brand?
+        if column_name == "net_contents_clean":
             try:
-                return "prompt_contents", "contents", re.findall(r"\d+", value)[0] # What is the numeric component of the product contents?
+                return "prompt_contents", "contents", self.float_to_string(value) # What is the numeric component of the product contents?
             except Exception as e:
                 return "prompt_contents", None, None # What is the numeric component of the product contents?
-        if column_name == "serving_size":
+        if column_name == "serving_size_clean":
             try:
-                return "prompt_serving_size", "serving_size", re.findall(r"\d+", value)[0] # What is the numeric component of the product serving size?
+                return "prompt_serving_size", "serving_size", self.float_to_string(value) # What is the numeric component of the product serving size?
             except Exception as e:
                 return "prompt_serving_size", None, None # What is the numeric component of the product serving size?
         if column_name == "company_name":
