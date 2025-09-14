@@ -28,7 +28,7 @@ class Loader:
 
         self.max_per_hour = max_per_hour # for rate limiting. Default is 0.
 
-        self.wait_interval = self.max_per_hour / (60*60)
+        self.wait_interval = (60*60) / self.max_per_hour
 
         os.makedirs(self.output_folder, exist_ok=True)
 
@@ -51,6 +51,10 @@ class Loader:
                 index, image, qas = self.load_next()
                 self.write_next(index, image, qas)
                 self.count += 1
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 429:
+                    print(f"Received 429 Too Many Requests. Retrying in 10 seconds...")
+                    time.sleep(10)
             except Exception as e:
                 self.count += 1
                 print(f"Exception: + {str(e)}")

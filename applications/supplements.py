@@ -8,7 +8,7 @@ import re
 
 class SupplementsLoader(Loader):
     def __init__(self, datasets_home):
-        super(SupplementsLoader, self).__init__("supplements", datasets_home, max_per_hour=990)
+        super(SupplementsLoader, self).__init__("supplements", datasets_home, max_per_hour=999)
 
         self.processed_max = 0
 
@@ -25,7 +25,7 @@ class SupplementsLoader(Loader):
         np.random.shuffle(self.ids) # get a random order of ids to iterate through
 
     def load_next(self):
-        next_index = self.processed_max + 1
+        next_index = self.count
 
         product_id = self.ids[next_index]
 
@@ -36,8 +36,6 @@ class SupplementsLoader(Loader):
         image = self.web_pdf_to_image(label_image_url, self.get_image_file(product_id))
 
         qas = self.create_prompts_answers(product)
-
-        self.processed_max += 1
 
         return product_id, image, qas
 
